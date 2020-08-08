@@ -94,8 +94,8 @@ def augment(inputs, outputs, poss, characters):
 	for k, item in enumerate(inputs):
 		inp, oup, pos = ''.join(inputs[k]), ''.join(outputs[k]), '-'.join(poss[k])
 		tx_set = [inp, oup, pos]
-		i, o = item[0], item[1]
-		inp_len, oup_len, al_len = len(inp), len(oup), len(i)
+		# i, o = item[0], item[1]
+		# inp_len, oup_len, al_len = len(inp), len(oup), len(i)
 		lss, mb, stc = seqMatch(inp, oup)
 		eps = '\u0395'
 		prefix_flag = False
@@ -148,15 +148,17 @@ def augment(inputs, outputs, poss, characters):
 					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup[:len(inp) - 2]), oup[len(inp) - 2:])
 					triplets.append(triplet)
 					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup[:len(inp) - 1]), oup[len(inp) - 1:])
+
 		elif len(inp.split(" ")) < len(oup.split(" ")):
-			# print(inp.split(" "), oup.split(" "), "+++++")
 			oups = oup.split(" ")
-			triplet = make_triplet(tx_set, oups[0], "{}->{}".format(inp, oup.replace(oups[0], "")), eps)
-			triplets.append(triplet)
-			triplet = make_triplet(tx_set, oups[0], "{}->{}".format(inp, oup.replace(oups[0], "")[:-1]), oup[-1:])
-			triplets.append(triplet)
-			triplet = make_triplet(tx_set, oups[0], "{}->{}".format(inp, oup.replace(oups[0], "")[:-2]), oup[-2:])
-			triplets.append(triplet)
+			for ind_o, oup_s in enumerate(oups):
+				pref = ' '.join(oups[0:ind_o])
+				pref = pref if len(pref) > 0 else eps
+				triplet = make_triplet(tx_set, pref, "{}->{}".format(inp, oup_s), eps)
+				triplets.append(triplet)
+				triplet = make_triplet(tx_set, pref, "{}->{}".format(inp, oup_s[:-1]), oup[-1:])
+				triplets.append(triplet)
+				triplet = make_triplet(tx_set, pref, "{}->{}".format(inp, oup_s[:-2]), oup[-2:])
 		else:
 			triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup), eps)
 			triplets.append(triplet)
@@ -170,11 +172,6 @@ def augment(inputs, outputs, poss, characters):
 			triplet['p'] = i_stc[6]
 			triplet['sc'] = triplet['sc'].replace(triplet['p'], "")
 		triplets.append(triplet)
-		# print(stc, mb)
-		# print(triplet)
-		# print('origin:', ''.join(inputs[k]) + '\t' + ''.join(outputs[k]))
-		# print('aligned:', item)
-		# print("----------------------")
 	return triplets
 
 
@@ -194,6 +191,7 @@ if __name__ == '__main__':
 	LOW_PATH = os.path.join(DATA_PATH, L2 + "-train")
 
 	lowi, lowo, lowt = read_data(LOW_PATH)
+	# lowi, lowo, lowt = lowi[:100], lowo[:100], lowt[:100]
 	# devi, devo, devt = read_data(DEV_PATH)
 
 	vocab = get_chars(lowi + lowo)

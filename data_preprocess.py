@@ -45,6 +45,7 @@ def seqMatch(str1, str2):
 	return lcs, blocks, stc
 
 
+# e: equal, i: insert, r: replace, d: delete
 rules = {'ei': '+s',
 		 'er': '-sc+s',
 		 'ed': '-sc-',
@@ -109,6 +110,12 @@ def augment(inputs, outputs, poss, characters):
 		if tag in rules:
 			if rules[tag] == '+s':
 				triplet = make_triplet(tx_set, eps, "{}->{}".format(eps, eps), stc[1][6])
+				triplets.append(triplet)
+				# rule for abet:abetted [p:E, sc:t->tt, s:ed]
+				if (stc[0][5][-1] == stc[1][6][0]) and len(stc[1][6]) > 1:
+					triplet = make_triplet(tx_set, eps, "{}->{}".
+										   format(stc[0][5][-1],
+												  stc[0][5][-1] + stc[1][6][0]), stc[1][6][1:])
 			elif rules[tag] == '-sc+s':
 				triplet = make_triplet(tx_set, eps, "{}->{}".format(inp[stc[1][1]:], eps), oup[stc[1][3]:])
 			elif rules[tag] == 'eee':
@@ -118,7 +125,7 @@ def augment(inputs, outputs, poss, characters):
 			elif rules[tag] == '~sc+s':
 				triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup[:stc[2][3]]), oup[stc[2][3]:])
 			elif rules[tag] == '~sc+s-3':
-				triplet = make_triplet(tx_set, eps,"{}->{}".
+				triplet = make_triplet(tx_set, eps, "{}->{}".
 									   format(inp[stc[1][1]:], oup[stc[1][1]:stc[3][3]]), oup[stc[3][3]:])
 			elif rules[tag] == 'sc->rer:s->i':
 				triplet = make_triplet(tx_set, eps, "{}->{}".
@@ -135,6 +142,7 @@ def augment(inputs, outputs, poss, characters):
 				triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup[:stc[-1][3]]), oup[stc[-1][3]:])
 				triplets.append(triplet)
 				pref = stc[0][6][:-1]
+				prefix_flag = False
 				triplet = make_triplet(tx_set, pref,
 									   "{}->{}".format(inp, oup[:stc[-1][3]].replace(pref, "")), oup[stc[-1][3]:])
 			elif rules[tag] == '-sc-':
@@ -154,6 +162,7 @@ def augment(inputs, outputs, poss, characters):
 			for ind_o, oup_s in enumerate(oups):
 				pref = ' '.join(oups[0:ind_o])
 				pref = pref if len(pref) > 0 else eps
+				prefix_flag = False if pref == eps else prefix_flag
 				triplet = make_triplet(tx_set, pref, "{}->{}".format(inp, oup_s), eps)
 				triplets.append(triplet)
 				triplet = make_triplet(tx_set, pref, "{}->{}".format(inp, oup_s[:-1]), oup[-1:])

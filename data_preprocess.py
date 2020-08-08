@@ -110,6 +110,9 @@ def augment(inputs, outputs, poss, characters):
 		if tag in rules:
 			if rules[tag] == '+s':
 				triplet = make_triplet(tx_set, eps, "{}->{}".format(eps, eps), stc[1][6])
+				triplets.append(triplet)
+				# rule for dance:danced [p:E, e->E, s:eed]
+				triplet = make_triplet(tx_set, eps, "{}->{}".format(stc[0][6][-1], eps), stc[0][6][-1] + stc[1][6])
 				# rule for abet:abetted [p:E, sc:t->tt, s:ed]
 				if (stc[0][5][-1] == stc[1][6][0]) and len(stc[1][6]) > 1:
 					triplets.append(triplet)

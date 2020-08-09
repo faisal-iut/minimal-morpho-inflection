@@ -154,7 +154,8 @@ def augment(inputs, outputs, poss, characters):
 				triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup[:stc[-2][3]]), oup[stc[-2][3]:])
 			elif rules[tag] == 'spe':
 				if len(mb) == 1:
-					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp[mb[0][1][1]:], eps), oup[mb[0][1][3]:])
+					triplet = make_triplet(tx_set, eps, "{}->{}".
+										   format(inp[stc[1][1]:], eps), oup[stc[1][3]:])
 				else:
 					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup[:len(inp) - 2]), oup[len(inp) - 2:])
 					triplets.append(triplet)

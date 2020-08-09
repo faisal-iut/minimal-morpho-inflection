@@ -167,11 +167,12 @@ def augment(inputs, outputs, poss, characters):
 				pref = ' '.join(oups[0:ind_o])
 				pref = pref if len(pref) > 0 else eps
 				prefix_flag = False if pref == eps else prefix_flag
-				triplet = make_triplet(tx_set, pref, "{}->{}".format(inp, oup_s), eps)
+				oup_r = oup.replace(pref, "")
+				triplet = make_triplet(tx_set, pref, "{}->{}".format(inp, oup_r), eps)
 				triplets.append(triplet)
-				triplet = make_triplet(tx_set, pref, "{}->{}".format(inp, oup_s[:-1]), oup[-1:])
+				triplet = make_triplet(tx_set, pref, "{}->{}".format(inp, oup_r[:-1]), oup[-1:])
 				triplets.append(triplet)
-				triplet = make_triplet(tx_set, pref, "{}->{}".format(inp, oup_s[:-2]), oup[-2:])
+				triplet = make_triplet(tx_set, pref, "{}->{}".format(inp, oup_r[:-2]), oup[-2:])
 		else:
 			triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup), eps)
 			triplets.append(triplet)

@@ -101,7 +101,6 @@ def augment(inputs, outputs, poss, characters):
 		eps = '\u0395'
 		prefix_flag = False
 		tag = ''.join(list(zip(*stc))[0])
-		# print(tag)
 		if tag[0] == 'i':
 			tag = tag[1:]
 			i_stc = stc[0]
@@ -137,10 +136,10 @@ def augment(inputs, outputs, poss, characters):
 									   oup[stc[5][3]:])
 			elif rules[tag] == '-sc+s-1':
 				if len(mb) != 0:
-					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp[stc[1][1]:], eps), oup[mb[0][1][3]:])
+					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp[stc[1][1]:], eps), oup[mb[0][1][2]:])
 				else:
 					triplet = make_triplet(tx_set, eps, "{}->{}".
-										   format(inp[stc[1][1]:], oup[stc[1][3]:stc[-2][4]]), oup[stc[-1][3]:])
+										   format(inp[stc[1][1]:], oup[stc[1][3]:]), eps)
 			elif rules[tag] == '-sc+s-2':
 				triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup[:stc[-1][3]]), oup[stc[-1][3]:])
 				triplets.append(triplet)
@@ -157,11 +156,15 @@ def augment(inputs, outputs, poss, characters):
 					triplet = make_triplet(tx_set, eps, "{}->{}".
 										   format(inp[stc[1][1]:], eps), oup[stc[1][3]:])
 				else:
-					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup[:len(inp) - 2]), oup[len(inp) - 2:])
+					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp[stc[1][1]:],
+																		oup[stc[1][1]:len(oup) - 2]),
+										   oup[len(oup) - 2:])
 					triplets.append(triplet)
-					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup[:len(inp) - 1]), oup[len(inp) - 1:])
-
+					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp[stc[1][1]:],
+																		oup[stc[1][1]:len(oup) - 1]),
+										   oup[len(oup) - 1:])
 		elif len(inp.split(" ")) < len(oup.split(" ")):
+
 			oups = oup.split(" ")
 			for ind_o, oup_s in enumerate(oups):
 				pref = ' '.join(oups[0:ind_o])

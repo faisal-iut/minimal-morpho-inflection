@@ -65,7 +65,7 @@ def count_sum(input, output, pos, triplets):
 	return counting_dict, list(zip(input, char3, char2, char1))
 
 
-def calc_lambdas(proba):
+def calc_lambdas(proba, tot_it):
 	termination_condition = 0.0001
 	lambdas = []
 	for i in range(5):
@@ -116,7 +116,8 @@ def calc_lambdas(proba):
 		lambdas = next_lambdas.copy()
 		expected_counts = [0.0] * 5
 		iteration = iteration+1
-		if all(arr):
+		# if all(arr):
+		if iteration>tot_it:
 			tracked_info[iteration] = {'lambdas': lambdas,
 									   'avg_ll': calculate_avg_ln(prob_matrix, lambdas)}
 			break
@@ -127,7 +128,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument("datapath", help="path to data", type=str)
 	parser.add_argument("language", help="language", type=str)
-	parser.add_argument("-em", "--em", type=str,
+	parser.add_argument("-em", "--em", type=int,
 						help="calculate lambdas [train/dev]")
 	args = parser.parse_args()
 
@@ -137,10 +138,12 @@ if __name__ == '__main__':
 	# lemma, inf =  args.pair.split(":")
 	input, output, pos, triplets = read_data(LOW_PATH)
 
-	if args.em == "dev":
+	if args.em:
+		tot_it = args.em
 		with open(os.path.join(DATA_PATH, L2+ "-dev-proba.pickle"), 'rb') as outp:
 			proba = pickle.load(outp)
-		tracked_info = calc_lambdas(proba)
+		print("EM ITERATION FOR LANGUAGE: {}".format(L2))
+		tracked_info = calc_lambdas(proba, tot_it)
 		with open(os.path.join(DATA_PATH, L2 + "-dev_avg_ll.pickle"), 'wb') as outp:
 			pickle.dump(tracked_info, outp)
 	# lowi, lowo, lowt = lowi[:100], lowo[:100], lowt[:100]

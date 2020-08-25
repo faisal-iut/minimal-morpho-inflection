@@ -1,4 +1,4 @@
-import align
+
 import argparse
 import codecs
 import os, sys

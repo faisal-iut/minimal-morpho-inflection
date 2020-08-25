@@ -193,6 +193,7 @@ def reconstruct_lemma(output, triplet):
 		sca = "" if sca == eps else sca
 		stm = p + '.*' + sca + s
 		stm = stm.replace(")", "")
+		stm = stm.replace("(", "")
 		pat = re.compile(stm)
 		m = pat.match(output)
 		if m is not None:

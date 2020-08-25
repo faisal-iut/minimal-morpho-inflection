@@ -64,6 +64,7 @@ rules = {'ei': '+s',
 		 'eieiei': 'spe',
 		 'eder': '-sc+s-1',
 		 'erei': '-sc+s-1',
+		'edei': '-sc+s-1',
 		 'eded': '-sc+s-1',
 		 'edeiei': '-sc+s-1',
 		 'rerer': '-sc+s-2',
@@ -106,6 +107,8 @@ def augment(inputs, outputs, poss, characters):
 			i_stc = stc[0]
 			stc = stc[1:]
 			prefix_flag = True
+		eqf = re.compile('[e]+')
+		eqfr = eqf.match(tag)
 		if tag in rules:
 			if rules[tag] == '+s':
 				triplet = make_triplet(tx_set, eps, "{}->{}".format(eps, eps), stc[1][6])
@@ -134,12 +137,6 @@ def augment(inputs, outputs, poss, characters):
 									   format(inp[stc[1][1]:stc[3][2]],
 											  oup[stc[1][3]:stc[3][4]]),
 									   oup[stc[5][3]:])
-			elif rules[tag] == '-sc+s-1':
-				if len(mb) != 0:
-					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp[stc[1][1]:], eps), oup[mb[0][1][2]:])
-				else:
-					triplet = make_triplet(tx_set, eps, "{}->{}".
-										   format(inp[stc[1][1]:], oup[stc[1][3]:]), eps)
 			elif rules[tag] == '-sc+s-2':
 				triplet = make_triplet(tx_set, eps, "{}->{}".format(inp, oup[:stc[-1][3]]), oup[stc[-1][3]:])
 				triplets.append(triplet)
@@ -163,6 +160,13 @@ def augment(inputs, outputs, poss, characters):
 					triplet = make_triplet(tx_set, eps, "{}->{}".format(inp[stc[1][1]:],
 																		oup[stc[1][1]:len(oup) - 1]),
 										   oup[len(oup) - 1:])
+		elif eqfr is not None:
+			if len(mb) != 0:
+				triplet = make_triplet(tx_set, eps, "{}->{}".format(inp[stc[1][1]:], eps), oup[stc[0][4]:])
+
+			else:
+				triplet = make_triplet(tx_set, eps, "{}->{}".
+									   format(inp[stc[1][1]:], oup[stc[1][3]:]), eps)
 		elif len(inp.split(" ")) < len(oup.split(" ")):
 
 			oups = oup.split(" ")
@@ -217,3 +221,5 @@ if __name__ == '__main__':
 		for val in triplets:
 			outp.write(val['inp'] + '\t' + val['oup'] + '\t' + val['pos'] + '\t' +
 					   val['p'] + '\t' + val['sc'] + '\t' + val['s'] + '\n')
+	print("Total {} <prefix, stem_change, suffix> triplet generated"
+		  " for {} language train data".format(len(triplets), L2))

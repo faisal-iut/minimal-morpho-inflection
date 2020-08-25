@@ -10,6 +10,7 @@ import numpy as np
 from collections import Counter
 import pickle
 import pandas as pd
+from utils import df_to_dict, calculate_avg_ln
 
 def read_data(filename):
 	with codecs.open(filename, 'r', 'utf-8') as inp:
@@ -64,7 +65,7 @@ def count_sum(input, output, pos, triplets):
 	return counting_dict, list(zip(input, char3, char2, char1))
 
 
-def calc_lambdas(tri_input, output, pos, triplets, sums):
+def calc_lambdas(proba):
 	termination_condition = 0.0001
 	lambdas = []
 	for i in range(5):
@@ -74,42 +75,60 @@ def calc_lambdas(tri_input, output, pos, triplets, sums):
 		lambdas[i] /= norm
 	next_lambdas = [0.0] * 5
 	expected_counts = [0.0] * 5
+	triplet =  list(zip(proba['prefix'], proba['stem_change'], proba['suffix'], proba['n3'], proba['n2'], proba['n1']))
+	n1_pscs = df_to_dict(proba, ['n1', 'prefix', 'stem_change', 'suffix'], 'n1_pscs')
+	n2_pscs = df_to_dict(proba, ['n2', 'prefix', 'stem_change', 'suffix'], 'n2_pscs')
+	n3_pscs = df_to_dict(proba, ['n3', 'prefix', 'stem_change', 'suffix'], 'n3_pscs')
+	sc_ps = df_to_dict(proba, ['prefix', 'stem_change', 'suffix'], 'sc_ps')
+	p_sc = df_to_dict(proba, ['stem_change'], 'p_sc')
+	iteration =0
+	prob_matrix = np.zeros((len(triplet), len(lambdas)))
+	tracked_info = {}
 	while True:
-		for i, trip in enumerate(triplets):
-			inp, char3, char2, char1 = tri_input[i]
-			t = pos[i]
+		print("iteration no {}".format(iteration))
+		for i, trip in enumerate(triplet):
 			p,sc,s = trip[0],trip[1],trip[2]
-			p0 = sums['sc_char3_p_s_t'][(sc,char3, p, s, t)]/sums['char3_p_s_t'][(char3, p, s, t)]
-			p1 = sums['sc_char2_p_s_t'][(sc, char2, p, s, t)] / sums['char2_p_s_t'][(char2, p, s, t)]
-			p2 = sums['sc_char1_p_s_t'][(sc, char1, p, s, t)] / sums['char1_p_s_t'][(char1, p, s, t)]
-			p3 = sums['sc_p_s_t'][(sc, p, s, t)] / sums['p_s_t'][(p, s, t)]
-			p4 = sums['sc_all'][sc] / sums['all']
+			n3, n2, n1 = trip[3],trip[4],trip[5]
+			p0 = n3_pscs[(n3, p, sc, s)]
+			p1 = n2_pscs[(n2, p, sc, s)]
+			p2 = n1_pscs[(n1, p, sc, s)]
+			p3 = sc_ps[(p, sc, s)]
+			p4 = p_sc[sc]
 			prob = lambdas[0]*p0 + lambdas[1]*p1 + lambdas[2]*p2 + lambdas[3]*p3 + lambdas[4]*p4
-
 			expected_counts[0] += lambdas[0] * p0 / prob
 			expected_counts[1] += lambdas[1] * p1 / prob
 			expected_counts[2] += lambdas[2] * p2 / prob
 			expected_counts[3] += lambdas[3] * p3 / prob
 			expected_counts[4] += lambdas[4] * p4 / prob
+			if iteration==0:
+				prob_matrix[i][0] = p0
+				prob_matrix[i][1] = p1
+				prob_matrix[i][2] = p2
+				prob_matrix[i][3] = p3
+				prob_matrix[i][4] = p4
+		tracked_info[iteration] = {'lambdas': lambdas,
+						'avg_ll': calculate_avg_ln(prob_matrix, lambdas)}
 		arr = []
 		for i in range(5):
 			next_lambdas[i] = expected_counts[i] / sum(expected_counts)
 			arr.append(abs((lambdas[i] - next_lambdas[i])) < termination_condition)
 
 		lambdas = next_lambdas.copy()
-		print(lambdas)
 		expected_counts = [0.0] * 5
+		iteration = iteration+1
 		if all(arr):
+			tracked_info[iteration] = {'lambdas': lambdas,
+									   'avg_ll': calculate_avg_ln(prob_matrix, lambdas)}
 			break
-	print("Smoothed lambdas:")
-	print(lambdas)
+
+	return tracked_info
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument("datapath", help="path to data", type=str)
 	parser.add_argument("language", help="language", type=str)
-	# parser.add_argument("pair", help="lemma:inflection", type=str)
-	# parser.add_argument("--all", help="all pairs? (def: false)", default=False, action="store_true")
+	parser.add_argument("-em", "--em", type=str,
+						help="calculate lambdas [train/dev]")
 	args = parser.parse_args()
 
 	DATA_PATH = args.datapath
@@ -117,6 +136,13 @@ if __name__ == '__main__':
 	LOW_PATH = os.path.join(DATA_PATH, L2 + "-hall-o")
 	# lemma, inf =  args.pair.split(":")
 	input, output, pos, triplets = read_data(LOW_PATH)
+
+	if args.em == "dev":
+		with open(os.path.join(DATA_PATH, L2+ "-dev-proba.pickle"), 'rb') as outp:
+			proba = pickle.load(outp)
+		tracked_info = calc_lambdas(proba)
+		with open(os.path.join(DATA_PATH, L2 + "-dev_avg_ll.pickle"), 'wb') as outp:
+			pickle.dump(tracked_info, outp)
 	# lowi, lowo, lowt = lowi[:100], lowo[:100], lowt[:100]
 
 	# counting_dict, tri_input =  count_sum(input, output, pos, triplets)
@@ -125,9 +151,7 @@ if __name__ == '__main__':
 	# with open(os.path.join(DATA_PATH, L2 + "tri_input.pickle"), 'wb') as outp:
 	# 	pickle.dump(tri_input, outp)
 
-	with open(os.path.join(DATA_PATH, L2 + "count_sum.pickle"), 'rb') as outp:
-		counting_dict = pickle.load(outp)
-	with open(os.path.join(DATA_PATH, L2 + "tri_input.pickle"), 'rb') as outp:
-		tri_input = pickle.load(outp)
-
-	calc_lambdas(tri_input, output, pos, triplets, counting_dict)
+	# with open(os.path.join(DATA_PATH, L2 + "count_sum.pickle"), 'rb') as outp:
+	# 	counting_dict = pickle.load(outp)
+	# with open(os.path.join(DATA_PATH, L2 + "tri_input.pickle"), 'rb') as outp:
+	# 	tri_input = pickle.load(outp)

@@ -124,11 +124,40 @@ def calc_lambdas(proba, tot_it):
 
 	return tracked_info
 
+def em_iteration(df, iterations):
+	print(iterations)
+	it = 0
+	df['p(l|w)']=0
+	df['ec(l)']=0
+	df['ec(l,w)']=0
+
+	while True:
+		df['p(l,w)'] = df['p(l)'] * df['p(w|l)']
+		for i, row in df.iterrows():
+			l,w, p_lw, ec_l, ec_lw = row['l'],row['w'], row['p(l,w)'], row['ec(l)'], row['ec(l,w)']
+			p_w =  sum(df.loc[df['w'] == w, 'p(l,w)'].values)
+			df.loc[(df['l']==l) & (df['w']==w),'p(l|w)'] = p_lw/p_w
+			df.loc[(df['l'] == l) , 'ec(l)'] = df.loc[(df['l'] == l) , 'ec(l)'] + p_lw/p_w
+			df.loc[(df['l'] == l) & (df['w'] == w), 'ec(l,w)'] = df.loc[(df['l'] == l) & (df['w'] == w), 'ec(l,w)']\
+																 + p_lw/p_w
+		df['p(l)'] = df['ec(l)']/len(set(df['w']))
+		df['p(w|l)'] = df['ec(l,w)'] / df['ec(l)']
+		if it==iterations:
+			break
+		it=it+1
+		print('iteration', it)
+		print(df.iloc[:, np.r_[0:6,7]])
+		df['ec(l)'] = 0
+		df['ec(l,w)'] = 0
+
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument("datapath", help="path to data", type=str)
 	parser.add_argument("language", help="language", type=str)
 	parser.add_argument("-em", "--em", type=int,
+						help="calculate lambdas [train/dev]")
+	parser.add_argument("-t", "--toy", type=int,
 						help="calculate lambdas [train/dev]")
 	args = parser.parse_args()
 
@@ -146,6 +175,31 @@ if __name__ == '__main__':
 		tracked_info = calc_lambdas(proba, tot_it)
 		with open(os.path.join(DATA_PATH, L2 + "-dev_avg_ll.pickle"), 'wb') as outp:
 			pickle.dump(tracked_info, outp)
+	if args.toy>=0:
+		filename = os.path.join(DATA_PATH, L2 + "-toy")
+		with codecs.open(filename, 'r', 'utf-8') as inp:
+			lines = inp.readlines()
+		inputs = []
+		outputs = []
+		for l in lines:
+			l = l.strip().split('\t')
+			if len(l) > 1:
+				inputs.append(l[0])
+				outputs.append(l[1])
+		ds = list(zip(inputs, outputs))
+
+		lst = []
+		cols = ["l","w","p(l)","p(w|l)"]
+		for i,lw in enumerate(ds):
+			l,w = lw[0],lw[1]
+			p_l = 1/len(set(inputs))
+			# p_l = inputs.count(l) / len(inputs)
+			p_wbl =1/inputs.count(l)
+			lst.append([l,w,p_l, p_wbl])
+		df = pd.DataFrame(lst, columns=cols)
+		print(df)
+		em_iteration(df, args.toy)
+
 	# lowi, lowo, lowt = lowi[:100], lowo[:100], lowt[:100]
 
 	# counting_dict, tri_input =  count_sum(input, output, pos, triplets)

@@ -125,30 +125,21 @@ def calc_lambdas(proba, tot_it):
 	return tracked_info
 
 def em_iteration(df, iterations):
-	print(iterations)
-	it = 0
-	df['p(l|w)']=0
-	df['ec(l)']=0
-	df['ec(l,w)']=0
 
-	while True:
+	for it in range(0,iterations):
+		#E step
 		df['p(l,w)'] = df['p(l)'] * df['p(w|l)']
-		for i, row in df.iterrows():
-			l,w, p_lw, ec_l, ec_lw = row['l'],row['w'], row['p(l,w)'], row['ec(l)'], row['ec(l,w)']
-			p_w =  sum(df.loc[df['w'] == w, 'p(l,w)'].values)
-			df.loc[(df['l']==l) & (df['w']==w),'p(l|w)'] = p_lw/p_w
-			df.loc[(df['l'] == l) , 'ec(l)'] = df.loc[(df['l'] == l) , 'ec(l)'] + p_lw/p_w
-			df.loc[(df['l'] == l) & (df['w'] == w), 'ec(l,w)'] = df.loc[(df['l'] == l) & (df['w'] == w), 'ec(l,w)']\
-																 + p_lw/p_w
+		df['p(w)'] = df.apply(lambda row: df.loc[df['w'] == row['w'], 'p(l,w)'].sum(), axis=1)
+		df['p(l|w)'] = df['p(l,w)']/ df['p(w)']
+		df['ec(l)'] = df.apply(lambda row: df.loc[df['l'] == row['l'], 'p(l|w)'].sum(), axis=1)
+		df['ec(l,w)'] = df['p(l|w)']
+		#M step
 		df['p(l)'] = df['ec(l)']/len(set(df['w']))
 		df['p(w|l)'] = df['ec(l,w)'] / df['ec(l)']
-		if it==iterations:
-			break
-		it=it+1
+
 		print('iteration', it)
-		print(df.iloc[:, np.r_[0:6,7]])
-		df['ec(l)'] = 0
-		df['ec(l,w)'] = 0
+		print(df)
+		# print(df.iloc[:, np.r_[3:8]])
 
 
 if __name__ == '__main__':

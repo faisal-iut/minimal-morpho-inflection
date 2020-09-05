@@ -186,6 +186,7 @@ def reconstruct_lemma(output, triplet):
 	new_trip = []
 	for trip in triplet:
 		p, sc, s = trip[0], trip[1], trip[2]
+		pos = trip[3] if len(trip)>3 else 0
 		scb, sca = trip[1].strip().split('->')
 		p = "" if p == eps or p == "*" else p
 		s = "" if s == eps else s
@@ -202,10 +203,12 @@ def reconstruct_lemma(output, triplet):
 				f1 = output[:-len(trail)]
 				f2 = f1 + scb
 				f3 = p + f2
-				new_trip.append((trip[0], trip[1], trip[2], f3))
+				new_trip.append((trip[0], trip[1], trip[2],pos, f3, output))
+		new_trip.append((eps, "{}->{}".format(eps, eps), eps, pos, output, output))
 	new_trip = list(set(new_trip))
-	if len(new_trip) == 0:
-		new_trip.append((eps, "{}->{}".format(eps, eps), eps, output))
+	if len(new_trip) == 0 or len(output)<=3:
+		new_trip = []
+		new_trip.append((eps, "{}->{}".format(eps, eps), eps, pos, output, output))
 
 	return new_trip
 

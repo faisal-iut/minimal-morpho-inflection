@@ -17,9 +17,10 @@ def read_data(filename):
 	for l in lines:
 		l = l.strip().split('\t')
 		if len(l) > 1:
-			inputs.append(list(l[0].strip()))
-			outputs.append(list(l[1].strip()))
-			tags.append(re.split('\W+', l[2].strip()))
+			inputs.append(l[0])
+			outputs.append(l[1])
+			# tags.append(re.split('\W+', l[2].strip()))
+			tags.append(l[2])
 	return inputs, outputs, tags
 
 
@@ -83,18 +84,18 @@ def make_triplet(tx_set, p, sc, s):
 	return triplet
 
 
-def augment(inputs, outputs, poss, characters):
-	temp = [(''.join(inputs[i]), ''.join(outputs[i])) for i in range(len(outputs))]
+def augment(inputs, outputs, poss):
+	# temp = [(''.join(inputs[i]), ''.join(outputs[i])) for i in range(len(outputs))]
 	# aligned = align.Aligner(temp).alignedpairs
-	vocab = list(characters)
-	try:
-		vocab.remove(u" ")
-	except:
-		pass
+	# vocab = list(characters)
+	# try:
+	# 	vocab.remove(u" ")
+	# except:
+	# 	pass
 
 	triplets = []
 	for k, item in enumerate(inputs):
-		inp, oup, pos = ''.join(inputs[k]), ''.join(outputs[k]), '-'.join(poss[k])
+		inp, oup, pos = inputs[k], outputs[k], poss[k]
 		tx_set = [inp, oup, pos]
 		# i, o = item[0], item[1]
 		# inp_len, oup_len, al_len = len(inp), len(oup), len(i)
@@ -216,7 +217,7 @@ if __name__ == '__main__':
 	# devi, devo, devt = read_data(DEV_PATH)
 
 	vocab = get_chars(lowi + lowo)
-	triplets = augment(lowi, lowo, lowt, vocab)
+	triplets = augment(lowi, lowo, lowt)
 	with codecs.open(os.path.join(DATA_PATH, L2 + "-hall"), 'w', 'utf-8') as outp:
 		for val in triplets:
 			outp.write(val['inp'] + '\t' + val['oup'] + '\t' + val['pos'] + '\t' +

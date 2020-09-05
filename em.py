@@ -124,22 +124,24 @@ def calc_lambdas(proba, tot_it):
 
 	return tracked_info
 
-def em_iteration(df, iterations):
+def em_1(df, iterations):
 
 	for it in range(0,iterations):
 		#E step
 		df['p(l,w)'] = df['p(l)'] * df['p(w|l)']
-		df['p(w)'] = df.apply(lambda row: df.loc[df['w'] == row['w'], 'p(l,w)'].sum(), axis=1)
+		df['p(w)'] = df.groupby(['w'])['p(l,w)'].transform('sum')
 		df['p(l|w)'] = df['p(l,w)']/ df['p(w)']
-		df['ec(l)'] = df.apply(lambda row: df.loc[df['l'] == row['l'], 'p(l|w)'].sum(), axis=1)
-		df['ec(l,w)'] = df['p(l|w)']
+		df['ec(l)'] = df.groupby(['l'])['p(l|w)'].transform('sum')
+		df['ec(l,w)'] = df.groupby(['l','w'])['p(l|w)'].transform('sum')
+
 		#M step
 		df['p(l)'] = df['ec(l)']/len(set(df['w']))
 		df['p(w|l)'] = df['ec(l,w)'] / df['ec(l)']
 
 		print('iteration', it)
-		print(df)
-		# print(df.iloc[:, np.r_[3:8]])
+		# print(df)
+		print(df.iloc[:, np.r_[6:13]])
+	return df
 
 
 if __name__ == '__main__':
@@ -189,7 +191,7 @@ if __name__ == '__main__':
 			lst.append([l,w,p_l, p_wbl])
 		df = pd.DataFrame(lst, columns=cols)
 		print(df)
-		em_iteration(df, args.toy)
+		em_1(df, args.toy)
 
 	# lowi, lowo, lowt = lowi[:100], lowo[:100], lowt[:100]
 

@@ -1,5 +1,6 @@
 import argparse
 import codecs
+
 import os, sys
 import random
 import difflib

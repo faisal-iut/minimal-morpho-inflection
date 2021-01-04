@@ -55,7 +55,7 @@ def lemma_morph_data(en_text,lang,task):
     logger.debug("debug message")
     doc_len = len(en_text)
     if task =='token':
-        nlp = stanza.Pipeline(lang=lang, processors='tokenize')
+        nlp = stanza.Pipeline(lang=lang, processors='tokenize', tokenize_no_ssplit = True)
     else:    
         nlp = stanza.Pipeline(lang=lang, tokenize_pretokenized=True, tokenize_no_ssplit = True, 
                             processors='tokenize,mwt,pos,lemma')
@@ -86,7 +86,7 @@ def lemma_morph_data(en_text,lang,task):
         logger.debug("currently processing: {}".format(curr_len))
     logger.info("length list: {}".format(start_end))
     p = multiprocessing.Pool(processes = multiprocessing.cpu_count()-1)
-    sent_x=partial(morph_info, dic=en_text, task = 'morph', nlp=nlp)
+    sent_x=partial(morph_info, dic=en_text, task=task, nlp=nlp)
     eng_tokens = p.map(sent_x, start_end)
     p.close()
     p.join()
@@ -118,6 +118,7 @@ def load_lemmatize(lang):
 
 if __name__ == "__main__":
     filepath = './data/eng_V'
+    # operation = 'src_morph'
     operation = 'join_splitted'
 #     src_file = load_lemmatize('es')
 #     file_write(filepath, 'es_tok_lemma.txt', 'codecs', src_file)
@@ -130,10 +131,35 @@ if __name__ == "__main__":
 #     es_en_joined_lemmatized = join_splitted('es_tok_lemma.txt', 'en_tok_lemma.txt') 
 #     file_write(filepath,'spa-eng-{}.spa-eng'.format('lemmatized'),'codecs', es_en_joined_lemmatized)
 
+
+##### Construct tokenized data
+    if operation=='token':
+        lang =  'es'
+        src_file = 'corp_sent_detok_marian.{}_V'.format(lang)
+        dst_file =  '{}.txt.norm.tok.true'.format(lang)
+        src_data =  file_read(filepath, src_file, 'codecs')
+        src_data_joined = '\n\n'.join(src_data)
+        src_tok_data =  lemma_morph_data(src_data_joined, lang, 'token')
+        src_tok_data_joined = '\n'.join(src_tok_data)
+        file_write(filepath, dst_file,'codecs', str(src_tok_data_joined))
+        logger.info("{} data tokenization done and file saved".format(lang))
+
+        lang =  'en'
+        src_file = 'corp_sent_detok.{}_V'.format(lang)
+        dst_file =  '{}.txt.norm.tok.true'.format(lang)
+        src_data =  file_read(filepath, src_file, 'codecs')
+        src_data_joined = '\n\n'.join(src_data)
+        src_tok_data =  lemma_morph_data(src_data_joined, lang, 'token')
+        src_tok_data_joined = '\n'.join(src_tok_data)
+        file_write(filepath, dst_file,'codecs', str(src_tok_data_joined))
+        logger.info("{} data tokenization done and file saved".format(lang))
+        print()
+
+
 ##### constract and save source side morphological data
     if operation=='src_morph':
         lang = 'es'
-        src_tok_true = file_read(filepath, '{}.marian.txt.norm.tok.true'.format(lang), 'codecs')
+        src_tok_true = file_read(filepath, '{}.txt.norm.tok.true'.format(lang), 'codecs')
         src_tok_true = '\n\n'.join(src_tok_true)
         src_morph_lemma = lemma_morph_data(src_tok_true, lang, 'morph')
     #     print(en_morph_lemma)
@@ -144,7 +170,7 @@ if __name__ == "__main__":
     if operation =='join_splitted':
         src_lang = 'es'
         dest_lang = 'en'
-        src_file = 'es.marian.txt.norm.tok.true'
+        src_file = 'es.txt.norm.tok.true'
         dst_file = 'en.txt.norm.tok.true'
         file_form = 'tokenized'
         src_dst_joined = join_splitted(src_file, dst_file, filepath)
